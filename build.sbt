@@ -1,11 +1,12 @@
 scalaVersion := "3.8.4"
 
-lazy val root = rootProject
+lazy val root = (project in file("."))
+  .enablePlugins(PlayScala)
   .settings(
     name := "dv01_challenge",
     libraryDependencies ++= Seq(
-      //You can add library dependencies here, for example,
-      //"org.scalatest" %% "scalatest" % "3.2.19" % Test,
-      //"org.scalameta" %% "munit" % "1.2.3" % Test
-    )
+      "org.apache.pekko" %% "pekko-http" % "1.3.0",
+      "org.scalameta" %% "munit" % "1.0.4" % Test
+    ),
+    testFrameworks += new TestFramework("munit.Framework")
   )
