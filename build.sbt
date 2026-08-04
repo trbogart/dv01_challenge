@@ -5,7 +5,8 @@ lazy val root = (project in file("."))
   .settings(
     name := "dv01_challenge",
     libraryDependencies ++= Seq(
-      "org.apache.pekko" %% "pekko-http" % "1.3.0",
+      guice,
+      "org.playframework" %% "play-json" % "3.0.5",
       "org.scalameta" %% "munit" % "1.0.4" % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")

@@ -27,7 +27,18 @@ TODO
 ## Architecture
 
 - Implemented in Scala using Play Framework
-- HTTP layer is `pekko-http`
-  - This is mostly because of familiarity given short timeframe
-- Aggregate data in code
+- HTTP layer and routing use Play's built-in `Action`/`conf/routes`, with `play-json` for serialization
+- Aggregate data in code (see scalability section)
 - MUnit tests
+
+## Scalability
+Aggregation is currently done per request, which is O(n) by record count.
+This is likely acceptable for a low-volume API at this dataset size (~118k rows).
+More scalable solutions appropriate for higher call volume or dataset size include
+using a database (e.g. sqlite) or building an index by each possible bucket, 
+e.g. grouping loan records by state.
+
+TODO - verify performance
+
+## Other Limitations
+- Data is loaded at server start and remains static
