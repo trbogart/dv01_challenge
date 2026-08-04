@@ -5,12 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project state
 
 Remaining tasks:
-- Define API interface, model, dummy implementation, setup routing
-- Implement and test single path, no filter (e.g. return count for state)
-- Add filter by date range 
-- Add additional aggregation metrics (e.g. total loan amount)
-- Add additional groupBy options (e.g. grade, fico band, issue month)
-- Add additional filters
+- Implement API MVP
+  - GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2018-01&dateTo=2018-12
+  - For MVP, support groupBy=state and metric=totalLoanAmount, along with filtering by grade(s), dateFrom, and dateTo (inclusive)
+  - Example response:
+    - `{ "groupBy": "state", "metric": "totalLoanAmount", "data": [{"key": "CA", "value": 48213000}, {"key": "NY", "value": 31200000}] }`
+- Additional features, time permitting:
+  - Add support for metric=count, averageLoanAmount, or averageInterestRate
+  - Add support for filtering by ficoBand=670-739&
+  - Add support for groupBy=grade
+  - Add support for groupBy=ficoBand
 - Finish documentation and remove TODOs before submitting
 
 ## Goal (from README.md)
