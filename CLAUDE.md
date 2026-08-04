@@ -5,11 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project state
 
 Remaining tasks:
-- Parse and load CSV file into LoanRecord list on startup
-  - Load a configuration file (YAML if convenient) with a single property (e.g. data_file) that references data/LoanStats_securev1_2017Q4.csv by default
-  - Load that file and parse it into a list of LoanRecords
-  - Parse unit tests
-  - Load unit test (e.g. using LoanStats_head.csv, may move to a test data directory)
 - Define API interface, model, dummy implementation, setup routing
 - Implement and test single path, no filter (e.g. return count for state)
 - Add filter by date range 
@@ -32,14 +27,16 @@ Build a backend API in Scala that parses and aggregates loan data from a Lending
 - HTTP layer and routing use Play's built-in `Action`/`conf/routes`, with `play-json` for serialization (no standalone pekko-http server).
 - Data is aggregated in code (no database mentioned).
 - Tests use MUnit.
+- CSV loading (`dv01api.parser.LoanRecordParser`, `dv01api.service.LoanDataLoader`): the data file path comes from the `data_file` key in `conf/application.conf` (plain HOCON, not YAML — Play's config system already handles this natively, so introducing a YAML library wasn't worth it). `LoanDataLoader` is bound as an eager Guice singleton in `dv01api.Module` (registered via `play.modules.enabled` in `application.conf`) so the CSV is parsed once at startup, not lazily on first request. The parser uses `commons-csv` and must tolerate the real file's shape: a banner line before the header, and blank lines plus a "Total amount funded..." summary footer at EOF — both are skipped rather than parsed, by discarding the banner explicitly and treating any row that fails field conversion (via `Try`) as skippable, logged at `warn`.
 
 ## Build system
 
 - Scala 3.8.4, sbt 1.12.12 (`project/build.properties`).
 - Single root project `dv01_challenge`, defined in `build.sbt` as `(project in file("."))` with `PlayScala` enabled.
 - Play's sbt plugin (`org.playframework % sbt-plugin % 3.0.9`) is registered in `project/plugins.sbt`.
-- **Play's default layout** (`PlayLayoutPlugin` enabled, not disabled): Scala sources live under `app/` (e.g. `app/dv01api/model/LoanRecord.scala`), config/routes under `conf/`, and tests belong under top-level `test/` — not `src/main/scala` / `src/test/scala`. An earlier revision of this project used the standard sbt layout via `.disablePlugins(PlayLayoutPlugin)` with a manual `Compile / resourceDirectory` override to keep `conf/` working; that's been reverted in favor of Play's own layout, so don't reintroduce `src/main/scala` without re-adding both of those.
-- Explicit deps beyond the Play plugin's defaults: `guice` (Play doesn't bundle a DI implementation) and `org.playframework %% play-json` (split out of Play core as its own module).
+- **Play's default layout** (`PlayLayoutPlugin` enabled, not disabled): Scala sources live under `app/` (e.g. `app/dv01api/model/LoanRecord.scala`), config/routes under `conf/`, and test *sources* belong under top-level `test/` (e.g. `test/dv01api/parser/LoanRecordParserSpec.scala`) — not `src/main/scala` / `src/test/scala`. An earlier revision of this project used the standard sbt layout via `.disablePlugins(PlayLayoutPlugin)` with a manual `Compile / resourceDirectory` override to keep `conf/` working; that's been reverted in favor of Play's own layout, so don't reintroduce `src/main/scala` without re-adding both of those.
+  - **Resource directories follow sourceDirectory, per config scope**: sbt derives `resourceDirectory` as `sourceDirectory.value / "resources"` *within the same configuration axis* (Compile or Test) — it isn't a fixed default. `PlayLayoutPlugin` explicitly overrides `Compile / sourceDirectory` to `app/` *and* `Compile / resourceDirectory` to `conf/` (a special case, since `conf/` isn't nested under `app/`). For `Test`, it only overrides `Test / sourceDirectory` to `test/` and leaves `resourceDirectory` alone — which means the derived `Test / resourceDirectory` follows to `test/resources/`, not `src/test/resources/`. Test fixtures (e.g. `LoanStats_head.csv`) go in `test/resources/`. (This was gotten wrong twice while wiring up the CSV loader: first assumed `conf/` was untouched by `disablePlugins(PlayLayoutPlugin)` — wrong, caused a "resource not found on classpath: application.conf" error — then assumed `Test/resourceDirectory` stays at the sbt default `src/test/resources` — also wrong, caused a `NullPointerException` in `getResourceAsStream`. Verify against `PlayLayoutPlugin.scala`'s actual settings before changing this again, don't reason from the general Play docs.)
+- Explicit deps beyond the Play plugin's defaults: `guice` (Play doesn't bundle a DI implementation), `org.playframework %% play-json` (split out of Play core as its own module), and `org.apache.commons % commons-csv` for CSV parsing.
 
 **Known version risk**: Play 3.0.x officially supports Scala 3.3 LTS; this project pins `scalaVersion` to 3.8.4, which is past what Play has been tested against. If Play-generated code fails to compile, pinning `scalaVersion` down to a 3.3.x LTS release is the likely fix. (Also: sbt 2.0 was tried first and rejected — Play's sbt-plugin isn't published for the sbt2 cross-version at all, hence pinning to sbt 1.12.12; don't bump `project/build.properties` back to sbt 2.x without confirming Play has published a compatible plugin build.)
 

@@ -7,6 +7,7 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       guice,
       "org.playframework" %% "play-json" % "3.0.5",
+      "org.apache.commons" % "commons-csv" % "1.14.1",
       "org.scalameta" %% "munit" % "1.0.4" % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")

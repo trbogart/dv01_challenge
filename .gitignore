@@ -2,11 +2,14 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### IntelliJ IDEA ###
+# logs
+logs/
+
+# IntelliJ IDEA
 .idea/
 
-### Scala ###
+# Scala
 .bsp/
 
-# ignore data file
+# Data file (instructions for downloading in README)
 data/

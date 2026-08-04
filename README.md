@@ -19,7 +19,14 @@ TODO
 - Expand zip file (~118k lines) to `data/LoanStats_securev1_2017Q4.csv`
 
 ## Run
-TODO
+```
+sbt run
+```
+Note: in dev mode, Play doesn't build the application (and therefore doesn't load the CSV) until
+the first HTTP request comes in — the "Server started" message appears well before that. The
+first request after starting will be slower while the ~118k-row file loads; subsequent requests
+hit the already-loaded in-memory data. This is a dev-mode-only quirk (see `sbt-plugin`'s hot-reload
+behavior); a staged/production run (`sbt stage`) loads the data at process startup instead.
 
 ## Tests
 TODO
@@ -41,4 +48,5 @@ e.g. grouping loan records by state.
 TODO - verify performance
 
 ## Other Limitations
-- Data is loaded at server start and remains static
+- Data is loaded once, at application startup (see the `sbt run` note above for the dev-mode caveat), and remains static
+- A real application would need a readiness check to wait for data load finish
