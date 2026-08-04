@@ -6,7 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Remaining tasks:
 - Parse and load CSV file into LoanRecord list on startup
-- Parse/load unit tests
+  - Load a configuration file (YAML if convenient) with a single property (e.g. data_file) that references data/LoanStats_securev1_2017Q4.csv by default
+  - Load that file and parse it into a list of LoanRecords
+  - Parse unit tests
+  - Load unit test (e.g. using LoanStats_head.csv, may move to a test data directory)
 - Define API interface, model, dummy implementation, setup routing
 - Implement and test single path, no filter (e.g. return count for state)
 - Add filter by date range 
@@ -47,3 +50,7 @@ sbt test                   # run all tests
 sbt "testOnly *SomeSpec"   # run a single MUnit test suite
 sbt run                    # run the Play app (conf/routes is currently empty — everything 404s until routes/controllers are added)
 ```
+
+## Git
+
+Do not automatically commit changes.
