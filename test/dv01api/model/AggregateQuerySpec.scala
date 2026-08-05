@@ -50,9 +50,22 @@ class AggregateQuerySpec extends munit.FunSuite:
   }
 
   test("rejects an unsupported groupBy") {
-    val result = AggregateQuery.fromParams(Some("grade"), "totalLoanAmount", None, None, None)
+    val result = AggregateQuery.fromParams(Some("ficoBand"), "totalLoanAmount", None, None, None)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("groupBy")))
+  }
+
+  test("parses each supported groupBy") {
+    val supported = Seq(
+      "state" -> GroupBy.State,
+      "grade" -> GroupBy.Grade,
+      "yearMonth" -> GroupBy.IssueMonth,
+      "*" -> GroupBy.All
+    )
+    supported.foreach { case (paramName, expected) =>
+      val result = AggregateQuery.fromParams(Some(paramName), "totalLoanAmount", None, None, None)
+      assertEquals(result.map(_.groupBy), Right(expected))
+    }
   }
 
   test("rejects an unsupported metric") {

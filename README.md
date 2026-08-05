@@ -14,11 +14,11 @@ via an API endpoint for visualizing this data.
 `GET /api/loans/aggregate`
 
 Query parameters:
-- `groupBy` (optional) — currently only `state`; omitting it (or passing `groupBy=*` explicitly) skips grouping and aggregates across all matching records into a single `"*"` bucket
+- `groupBy` (optional) — one of `state`, `grade`, `yearMonth` (issue_d truncated to month, e.g. `"2018-01"`); omitting it (or passing `groupBy=*` explicitly) skips grouping and aggregates across all matching records into a single `"*"` bucket
 - `metric` (required) — one of `totalLoanAmount`, `count`, `averageLoanAmount`, `averageInterestRate` (the latter two rounded to 2 decimal places)
 - `grade` (optional) — comma-separated list, e.g. `A,B`; unfiltered if omitted
 - `dateFrom`, `dateTo` (optional) — `yyyy-MM`, inclusive on both ends; filters on `issue_d`
-   (but not the format difference, e.g. `2017-12` instead of `Dec-2017`)
+   (but note the format difference, e.g. `2017-12` instead of `Dec-2017`)
 
 Example:
 ```
@@ -66,11 +66,13 @@ sbt test
 
 ## Known Limitations
 - Aggregation is currently done per request, which is O(n) by record count.
-  This is likely acceptable for a low-volume API at this dataset size (~118k rows),
-  resulting in latency of 50 ms or less on development computer. More scalable solutions appropriate for higher call volume or dataset size include
+  - This is likely acceptable for a low-volume API at this dataset size (~118k rows),
+  resulting in latency of 50 ms or less on development computer. 
+  - More scalable solutions appropriate for higher call volume or dataset size include
   using a database (e.g. sqlite) or building an index by each possible bucket,
   e.g. grouping loan records by state.
 - Data is loaded once, at startup (see the `sbt run` note above for the dev-mode caveat), and remains static 
   for the lifetime of the application. A real application would likely need to load data dynamically.
 - A real application would need a readiness check to wait for the initial data load.
 - Only supports grouping by a single field.
+- Should dates use same format as CSV file?

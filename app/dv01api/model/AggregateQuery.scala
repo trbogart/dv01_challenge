@@ -5,6 +5,9 @@ import scala.util.Try
 
 enum GroupBy(val paramName: String):
   case State extends GroupBy("state")
+  case Grade extends GroupBy("grade")
+  /** Groups by issue_d truncated to month, e.g. "2018-01" (named to avoid shadowing java.time.YearMonth). */
+  case IssueMonth extends GroupBy("yearMonth")
   /** No grouping — every matching record falls into a single "*" bucket. */
   case All extends GroupBy("*")
 

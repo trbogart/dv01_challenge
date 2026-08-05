@@ -125,3 +125,28 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
     val result = LoanAggregationService.aggregate(records, query(groupBy = GroupBy.All, grades = Set("A")))
     assertEquals(result, List(AggregateBucket("*", BigDecimal(17000))))
   }
+
+  test("groups by grade") {
+    val result = LoanAggregationService.aggregate(records, query(groupBy = GroupBy.Grade))
+    assertEquals(
+      result,
+      List(
+        AggregateBucket("A", BigDecimal(17000)),
+        AggregateBucket("B", BigDecimal(5000)),
+        AggregateBucket("C", BigDecimal(3000))
+      )
+    )
+  }
+
+  test("groups by issue year-month, formatted as ISO yyyy-MM") {
+    val result = LoanAggregationService.aggregate(records, query(groupBy = GroupBy.IssueMonth))
+    assertEquals(
+      result,
+      List(
+        AggregateBucket("2017-12", BigDecimal(3000)),
+        AggregateBucket("2018-01", BigDecimal(10000)),
+        AggregateBucket("2018-03", BigDecimal(7000)),
+        AggregateBucket("2018-06", BigDecimal(5000))
+      )
+    )
+  }

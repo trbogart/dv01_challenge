@@ -22,6 +22,8 @@ object LoanAggregationService:
 
   private def groupKey(record: LoanRecord, groupBy: GroupBy): String = groupBy match
     case GroupBy.State => record.state
+    case GroupBy.Grade => record.grade
+    case GroupBy.IssueMonth => record.issueDate.toString // ISO yyyy-MM, matches dateFrom/dateTo's format
     case GroupBy.All => GroupBy.All.paramName
 
   private def computeMetric(records: List[LoanRecord], metric: Metric): BigDecimal = metric match
