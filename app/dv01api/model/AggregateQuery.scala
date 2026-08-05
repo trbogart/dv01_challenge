@@ -11,6 +11,9 @@ object GroupBy:
 
 enum Metric(val paramName: String):
   case TotalLoanAmount extends Metric("totalLoanAmount")
+  case Count extends Metric("count")
+  case AverageLoanAmount extends Metric("averageLoanAmount")
+  case AverageInterestRate extends Metric("averageInterestRate")
 
 object Metric:
   def parse(value: String): Option[Metric] = values.find(_.paramName == value)

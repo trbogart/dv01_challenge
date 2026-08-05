@@ -4,14 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-API MVP is implemented: `GET /api/loans/aggregate` (`dv01api.controllers.LoansController`, routed in `conf/routes`) supports `groupBy=state` and `metric=totalLoanAmount`, with filtering by `grade` (comma-separated), and `dateFrom`/`dateTo` (`yyyy-MM`, inclusive). Query parsing/validation lives in `dv01api.model.AggregateQuery.fromParams` (returns `Either[String, AggregateQuery]`, surfaced as `400` with `{"error": "..."}` on failure); filtering/grouping/metric computation lives in `dv01api.service.LoanAggregationService`. `GroupBy` and `Metric` are Scala 3 enums with a `paramName` field so parsing and response serialization stay in sync. Covered by `test/dv01api/model/AggregateQuerySpec.scala` and `test/dv01api/service/LoanAggregationServiceSpec.scala` (not yet run against `sbt test` in this environment — sbt isn't on PATH here — should be verified before relying on it).
+API MVP is implemented: `GET /api/loans/aggregate` (`dv01api.controllers.LoansController`, routed in `conf/routes`) supports `groupBy=state` and `metric` (`totalLoanAmount`, `count`, `averageLoanAmount`, or `averageInterestRate` — averages rounded to 2 decimal places via `LoanAggregationService.average`), with filtering by `grade` (comma-separated), and `dateFrom`/`dateTo` (`yyyy-MM`, inclusive). Query parsing/validation lives in `dv01api.model.AggregateQuery.fromParams` (returns `Either[String, AggregateQuery]`, surfaced as `400` with `{"error": "..."}` on failure); filtering/grouping/metric computation lives in `dv01api.service.LoanAggregationService`. `GroupBy` and `Metric` are Scala 3 enums with a `paramName` field so parsing and response serialization stay in sync. Covered by `test/dv01api/model/AggregateQuerySpec.scala` and `test/dv01api/service/LoanAggregationServiceSpec.scala` (not yet run against `sbt test` in this environment — sbt isn't on PATH here — should be verified before relying on it).
 
 Remaining tasks, time permitting:
-- Add support for metric=count, averageLoanAmount, or averageInterestRate
-- Add support for filtering by ficoBand=670-739&
-- Add support for groupBy=grade
-- Add support for groupBy=yearMonth
-- Add support for groupBy=ficoBand
+- Add support for filtering by ficoBand, e.g. 670-739
+- Add support for groupBy grade, yearMonth, or ficoBand
 - Finish documentation and remove TODOs before submitting
 
 ## Goal (from README.md)

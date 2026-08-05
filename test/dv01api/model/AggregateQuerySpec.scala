@@ -46,9 +46,22 @@ class AggregateQuerySpec extends munit.FunSuite:
   }
 
   test("rejects an unsupported metric") {
-    val result = AggregateQuery.fromParams("state", "count", None, None, None)
+    val result = AggregateQuery.fromParams("state", "medianLoanAmount", None, None, None)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("metric")))
+  }
+
+  test("parses each supported metric") {
+    val supported = Seq(
+      "totalLoanAmount" -> Metric.TotalLoanAmount,
+      "count" -> Metric.Count,
+      "averageLoanAmount" -> Metric.AverageLoanAmount,
+      "averageInterestRate" -> Metric.AverageInterestRate
+    )
+    supported.foreach { case (paramName, expected) =>
+      val result = AggregateQuery.fromParams("state", paramName, None, None, None)
+      assertEquals(result.map(_.metric), Right(expected))
+    }
   }
 
   test("rejects a malformed dateFrom") {

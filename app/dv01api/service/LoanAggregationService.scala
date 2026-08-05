@@ -25,3 +25,10 @@ object LoanAggregationService:
 
   private def computeMetric(records: List[LoanRecord], metric: Metric): BigDecimal = metric match
     case Metric.TotalLoanAmount => records.map(_.loanAmount).sum
+    case Metric.Count => BigDecimal(records.size)
+    case Metric.AverageLoanAmount => average(records.map(_.loanAmount))
+    case Metric.AverageInterestRate => average(records.map(_.intRate))
+
+  // Only ever called on a groupBy value, which is never empty.
+  private def average(values: List[BigDecimal]): BigDecimal =
+    (values.sum / values.size).setScale(2, BigDecimal.RoundingMode.HALF_UP)

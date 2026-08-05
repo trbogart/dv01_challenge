@@ -15,7 +15,7 @@ via an API endpoint for visualizing this data.
 
 Query parameters:
 - `groupBy` (required) — currently only `state`
-- `metric` (required) — currently only `totalLoanAmount`
+- `metric` (required) — one of `totalLoanAmount`, `count`, `averageLoanAmount`, `averageInterestRate` (the latter two rounded to 2 decimal places)
 - `grade` (optional) — comma-separated list, e.g. `A,B`; unfiltered if omitted
 - `dateFrom`, `dateTo` (optional) — `yyyy-MM`, inclusive on both ends; filters on `issue_d`
    (but not the format difference, e.g. `2017-12` instead of `Dec-2017`)
@@ -53,21 +53,16 @@ sbt test
 
 - Implemented in Scala using Play Framework
 - HTTP layer and routing use Play's built-in `Action`/`conf/routes`, with `play-json` for serialization
-- Aggregate data in code (see scalability section)
+- Aggregate data in code (see below for scalability)
 - MUnit tests
 
-## Scalability
-Aggregation is currently done per request, which is O(n) by record count.
-This is likely acceptable for a low-volume API at this dataset size (~118k rows),
-resulting in latency of 50 ms or less on development computer.
-
-More scalable solutions appropriate for higher call volume or dataset size include
-using a database (e.g. sqlite) or building an index by each possible bucket, 
-e.g. grouping loan records by state.
-
 ## Known Limitations
+- Aggregation is currently done per request, which is O(n) by record count.
+  This is likely acceptable for a low-volume API at this dataset size (~118k rows),
+  resulting in latency of 50 ms or less on development computer. More scalable solutions appropriate for higher call volume or dataset size include
+  using a database (e.g. sqlite) or building an index by each possible bucket,
+  e.g. grouping loan records by state.
 - Data is loaded once, at startup (see the `sbt run` note above for the dev-mode caveat), and remains static 
-  for the lifetime of the application.
-- A real application would need a readiness check to wait for data load finish.
-- Making `groupBy` optional and/or adding support for grouping by multiple fields would require reworking the response,
-  which would be much easier to do before actually publishing an API.
+  for the lifetime of the application. A real application would likely need to load data dynamically.
+- A real application would need a readiness check to wait for the initial data load.
+- Only supports grouping by a single field.

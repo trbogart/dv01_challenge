@@ -10,7 +10,8 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
     state: String,
     grade: String,
     issueDate: YearMonth,
-    loanAmount: BigDecimal
+    loanAmount: BigDecimal,
+    intRate: BigDecimal = BigDecimal("10.00")
   ): LoanRecord =
     LoanRecord(
       issueDate = issueDate,
@@ -20,22 +21,23 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
       ficoLow = 700,
       ficoHigh = 704,
       loanAmount = loanAmount,
-      intRate = BigDecimal("10.00")
+      intRate = intRate
     )
 
   private val records = List(
-    loan("CA", "A", YearMonth.of(2018, 1), BigDecimal(10000)),
-    loan("CA", "B", YearMonth.of(2018, 6), BigDecimal(5000)),
-    loan("NY", "A", YearMonth.of(2018, 3), BigDecimal(7000)),
-    loan("NY", "C", YearMonth.of(2017, 12), BigDecimal(3000))
+    loan("CA", "A", YearMonth.of(2018, 1), BigDecimal(10000), BigDecimal("8.00")),
+    loan("CA", "B", YearMonth.of(2018, 6), BigDecimal(5000), BigDecimal("9.50")),
+    loan("NY", "A", YearMonth.of(2018, 3), BigDecimal(7000), BigDecimal("12.00")),
+    loan("NY", "C", YearMonth.of(2017, 12), BigDecimal(3000), BigDecimal("15.25"))
   )
 
   private def query(
     grades: Set[String] = Set.empty,
     dateFrom: Option[YearMonth] = None,
-    dateTo: Option[YearMonth] = None
+    dateTo: Option[YearMonth] = None,
+    metric: Metric = Metric.TotalLoanAmount
   ): AggregateQuery =
-    AggregateQuery(GroupBy.State, Metric.TotalLoanAmount, grades, dateFrom, dateTo)
+    AggregateQuery(GroupBy.State, metric, grades, dateFrom, dateTo)
 
   test("groups by state and sums loan amount, with no filters") {
     val result = LoanAggregationService.aggregate(records, query())
@@ -84,4 +86,31 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
   test("returns no buckets when nothing matches") {
     val result = LoanAggregationService.aggregate(records, query(grades = Set("Z")))
     assertEquals(result, List.empty)
+  }
+
+  test("computes count per group") {
+    val result = LoanAggregationService.aggregate(records, query(metric = Metric.Count))
+    assertEquals(result, List(AggregateBucket("CA", BigDecimal(2)), AggregateBucket("NY", BigDecimal(2))))
+  }
+
+  test("computes average loan amount per group") {
+    val result = LoanAggregationService.aggregate(records, query(metric = Metric.AverageLoanAmount))
+    assertEquals(
+      result,
+      List(
+        AggregateBucket("CA", BigDecimal("7500.00")),
+        AggregateBucket("NY", BigDecimal("5000.00"))
+      )
+    )
+  }
+
+  test("computes average interest rate per group, rounded to 2 decimal places") {
+    val result = LoanAggregationService.aggregate(records, query(metric = Metric.AverageInterestRate))
+    assertEquals(
+      result,
+      List(
+        AggregateBucket("CA", BigDecimal("8.75")),
+        AggregateBucket("NY", BigDecimal("13.63"))
+      )
+    )
   }
