@@ -7,7 +7,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 API MVP is implemented: `GET /api/loans/aggregate` (`dv01api.controllers.LoansController`, routed in `conf/routes`) supports `groupBy=state` and `metric=totalLoanAmount`, with filtering by `grade` (comma-separated), and `dateFrom`/`dateTo` (`yyyy-MM`, inclusive). Query parsing/validation lives in `dv01api.model.AggregateQuery.fromParams` (returns `Either[String, AggregateQuery]`, surfaced as `400` with `{"error": "..."}` on failure); filtering/grouping/metric computation lives in `dv01api.service.LoanAggregationService`. `GroupBy` and `Metric` are Scala 3 enums with a `paramName` field so parsing and response serialization stay in sync. Covered by `test/dv01api/model/AggregateQuerySpec.scala` and `test/dv01api/service/LoanAggregationServiceSpec.scala` (not yet run against `sbt test` in this environment — sbt isn't on PATH here — should be verified before relying on it).
 
 Remaining tasks, time permitting:
-- Make groupBy optional
 - Add support for metric=count, averageLoanAmount, or averageInterestRate
 - Add support for filtering by ficoBand=670-739&
 - Add support for groupBy=grade
@@ -30,6 +29,8 @@ Build a backend API in Scala that parses and aggregates loan data from a Lending
 - Data is aggregated in code (no database mentioned).
 - Tests use MUnit.
 - CSV loading (`dv01api.parser.LoanRecordParser`, `dv01api.service.LoanDataLoader`): the data file path comes from the `data_file` key in `conf/application.conf` (plain HOCON, not YAML — Play's config system already handles this natively, so introducing a YAML library wasn't worth it). `LoanDataLoader` is bound as an eager Guice singleton in `dv01api.Module` (registered via `play.modules.enabled` in `application.conf`) so the CSV is parsed once at startup, not lazily on first request. The parser uses `commons-csv` and must tolerate the real file's shape: a banner line before the header, and blank lines plus a "Total amount funded..." summary footer at EOF — both are skipped rather than parsed, by discarding the banner explicitly and treating any row that fails field conversion (via `Try`) as skippable, logged at `warn`.
+- Request/performance logging (`dv01api.filters.LoggingFilter`): a `play.api.mvc.Filter` that logs method, path, response status, and elapsed millis (at `info`) for every request. Registered via `dv01api.filters.Filters` (a `DefaultHttpFilters`), wired in via `play.http.filters` in `application.conf`. Uses `org.apache.pekko.stream.Materializer` (not Akka) for the implicit `Filter.mat` — Play 3.0's `org.playframework` line replaced Akka with Apache Pekko.
+- Logging config lives in `conf/logback.xml`, not `application.conf` — Play's `logger.<name> = <level>` HOCON keys are deprecated in this Play version and silently have no effect (learned the hard way: root is `WARN` by default, and the `dv01api` logger is explicitly bumped to `INFO` there so both `LoanDataLoader`'s and `LoggingFilter`'s `info` logs are visible).
 
 ## Build system
 
