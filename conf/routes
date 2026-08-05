@@ -1,4 +1,4 @@
 # Routes
 # https://www.playframework.com/documentation/latest/ScalaRouting
 
-GET     /api/loans/aggregate       dv01api.controllers.LoansController.aggregate(groupBy: String, metric: String, grade: Option[String], dateFrom: Option[String], dateTo: Option[String])
+GET     /api/loans/aggregate       dv01api.controllers.LoansController.aggregate(groupBy: Option[String], metric: String, grade: Option[String], dateFrom: Option[String], dateTo: Option[String])

@@ -14,7 +14,7 @@ via an API endpoint for visualizing this data.
 `GET /api/loans/aggregate`
 
 Query parameters:
-- `groupBy` (required) — currently only `state`
+- `groupBy` (optional) — currently only `state`; omitting it (or passing `groupBy=*` explicitly) skips grouping and aggregates across all matching records into a single `"*"` bucket
 - `metric` (required) — one of `totalLoanAmount`, `count`, `averageLoanAmount`, `averageInterestRate` (the latter two rounded to 2 decimal places)
 - `grade` (optional) — comma-separated list, e.g. `A,B`; unfiltered if omitted
 - `dateFrom`, `dateTo` (optional) — `yyyy-MM`, inclusive on both ends; filters on `issue_d`
@@ -22,10 +22,18 @@ Query parameters:
 
 Example:
 ```
-GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2017-01&dateTo=2017-12
+GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2017-11&dateTo=2017-12
 ```
 ```json
 { "groupBy": "state", "metric": "totalLoanAmount", "data": [{"key": "CA", "value": 48213000}, {"key": "NY", "value": 31200000}] }
+```
+
+Without `groupBy` (or with `groupBy=*`), everything collapses into a single `"*"` bucket:
+```
+GET /api/loans/aggregate?metric=totalLoanAmount
+```
+```json
+{ "groupBy": "*", "metric": "totalLoanAmount", "data": [{"key": "*", "value": 4237913000}] }
 ```
 
 Invalid/unsupported `groupBy` or `metric` values, or malformed dates, return `400` with `{"error": "..."}`.

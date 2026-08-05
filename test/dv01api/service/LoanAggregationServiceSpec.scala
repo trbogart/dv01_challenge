@@ -35,9 +35,10 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
     grades: Set[String] = Set.empty,
     dateFrom: Option[YearMonth] = None,
     dateTo: Option[YearMonth] = None,
-    metric: Metric = Metric.TotalLoanAmount
+    metric: Metric = Metric.TotalLoanAmount,
+    groupBy: GroupBy = GroupBy.State
   ): AggregateQuery =
-    AggregateQuery(GroupBy.State, metric, grades, dateFrom, dateTo)
+    AggregateQuery(groupBy, metric, grades, dateFrom, dateTo)
 
   test("groups by state and sums loan amount, with no filters") {
     val result = LoanAggregationService.aggregate(records, query())
@@ -113,4 +114,14 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
         AggregateBucket("NY", BigDecimal("13.63"))
       )
     )
+  }
+
+  test("GroupBy.All collapses every matching record into a single '*' bucket") {
+    val result = LoanAggregationService.aggregate(records, query(groupBy = GroupBy.All))
+    assertEquals(result, List(AggregateBucket("*", BigDecimal(25000))))
+  }
+
+  test("GroupBy.All still applies filters before collapsing") {
+    val result = LoanAggregationService.aggregate(records, query(groupBy = GroupBy.All, grades = Set("A")))
+    assertEquals(result, List(AggregateBucket("*", BigDecimal(17000))))
   }

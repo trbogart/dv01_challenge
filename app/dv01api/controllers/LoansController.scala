@@ -13,7 +13,7 @@ class LoansController @Inject() (loanDataLoader: LoanDataLoader, cc: ControllerC
 
   /** GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2018-01&dateTo=2018-12 */
   def aggregate(
-    groupBy: String,
+    groupBy: Option[String],
     metric: String,
     grade: Option[String],
     dateFrom: Option[String],

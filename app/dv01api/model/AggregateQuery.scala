@@ -5,6 +5,8 @@ import scala.util.Try
 
 enum GroupBy(val paramName: String):
   case State extends GroupBy("state")
+  /** No grouping — every matching record falls into a single "*" bucket. */
+  case All extends GroupBy("*")
 
 object GroupBy:
   def parse(value: String): Option[GroupBy] = values.find(_.paramName == value)
@@ -32,16 +34,14 @@ case class AggregateQuery(
 object AggregateQuery:
 
   def fromParams(
-    groupBy: String,
+    groupBy: Option[String],
     metric: String,
     grade: Option[String],
     dateFrom: Option[String],
     dateTo: Option[String]
   ): Either[String, AggregateQuery] =
     for
-      gb <- GroupBy.parse(groupBy).toRight(
-        s"Unsupported groupBy '$groupBy'. Supported: ${GroupBy.values.map(_.paramName).mkString(", ")}"
-      )
+      gb <- parseGroupBy(groupBy)
       m <- Metric.parse(metric).toRight(
         s"Unsupported metric '$metric'. Supported: ${Metric.values.map(_.paramName).mkString(", ")}"
       )
@@ -54,6 +54,15 @@ object AggregateQuery:
       dateFrom = from,
       dateTo = to
     )
+
+  /** Omitted `groupBy` is equivalent to the explicit `groupBy=*` (no grouping). */
+  private def parseGroupBy(groupBy: Option[String]): Either[String, GroupBy] =
+    groupBy match
+      case None => Right(GroupBy.All)
+      case Some(value) =>
+        GroupBy.parse(value).toRight(
+          s"Unsupported groupBy '$value'. Supported: ${GroupBy.values.map(_.paramName).mkString(", ")}"
+        )
 
   private def parseGrades(grade: Option[String]): Set[String] =
     grade.toSet.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty)

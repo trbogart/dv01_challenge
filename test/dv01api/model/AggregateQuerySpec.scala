@@ -6,7 +6,7 @@ class AggregateQuerySpec extends munit.FunSuite:
 
   test("parses a fully populated query") {
     val result = AggregateQuery.fromParams(
-      groupBy = "state",
+      groupBy = Some("state"),
       metric = "totalLoanAmount",
       grade = Some("A,B"),
       dateFrom = Some("2018-01"),
@@ -27,7 +27,7 @@ class AggregateQuerySpec extends munit.FunSuite:
   }
 
   test("defaults grades/dates when optional params are absent") {
-    val result = AggregateQuery.fromParams("state", "totalLoanAmount", None, None, None)
+    val result = AggregateQuery.fromParams(Some("state"), "totalLoanAmount", None, None, None)
     assertEquals(
       result,
       Right(AggregateQuery(GroupBy.State, Metric.TotalLoanAmount, Set.empty, None, None))
@@ -35,18 +35,28 @@ class AggregateQuerySpec extends munit.FunSuite:
   }
 
   test("trims whitespace in the grade list and drops empty entries") {
-    val result = AggregateQuery.fromParams("state", "totalLoanAmount", Some(" A, B ,"), None, None)
+    val result = AggregateQuery.fromParams(Some("state"), "totalLoanAmount", Some(" A, B ,"), None, None)
     assertEquals(result.map(_.grades), Right(Set("A", "B")))
   }
 
+  test("treats a missing groupBy as GroupBy.All (no grouping)") {
+    val result = AggregateQuery.fromParams(None, "totalLoanAmount", None, None, None)
+    assertEquals(result.map(_.groupBy), Right(GroupBy.All))
+  }
+
+  test("treats an explicit groupBy=* the same as a missing groupBy") {
+    val result = AggregateQuery.fromParams(Some("*"), "totalLoanAmount", None, None, None)
+    assertEquals(result.map(_.groupBy), Right(GroupBy.All))
+  }
+
   test("rejects an unsupported groupBy") {
-    val result = AggregateQuery.fromParams("grade", "totalLoanAmount", None, None, None)
+    val result = AggregateQuery.fromParams(Some("grade"), "totalLoanAmount", None, None, None)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("groupBy")))
   }
 
   test("rejects an unsupported metric") {
-    val result = AggregateQuery.fromParams("state", "medianLoanAmount", None, None, None)
+    val result = AggregateQuery.fromParams(Some("state"), "medianLoanAmount", None, None, None)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("metric")))
   }
@@ -59,19 +69,19 @@ class AggregateQuerySpec extends munit.FunSuite:
       "averageInterestRate" -> Metric.AverageInterestRate
     )
     supported.foreach { case (paramName, expected) =>
-      val result = AggregateQuery.fromParams("state", paramName, None, None, None)
+      val result = AggregateQuery.fromParams(Some("state"), paramName, None, None, None)
       assertEquals(result.map(_.metric), Right(expected))
     }
   }
 
   test("rejects a malformed dateFrom") {
-    val result = AggregateQuery.fromParams("state", "totalLoanAmount", None, Some("not-a-date"), None)
+    val result = AggregateQuery.fromParams(Some("state"), "totalLoanAmount", None, Some("not-a-date"), None)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("dateFrom")))
   }
 
   test("rejects a malformed dateTo") {
-    val result = AggregateQuery.fromParams("state", "totalLoanAmount", None, None, Some("2018/12"))
+    val result = AggregateQuery.fromParams(Some("state"), "totalLoanAmount", None, None, Some("2018/12"))
     assert(result.isLeft)
     assert(result.left.exists(_.contains("dateTo")))
   }
