@@ -2,7 +2,7 @@
 
 ## Summary
 
-Backend API to parses and aggregates loan data.
+Backend API to parse and aggregate loan data.
 
 ### Goal
 
@@ -37,7 +37,7 @@ GET /api/loans/aggregate?metric=totalLoanAmount
 { "groupBy": "*", "metric": "totalLoanAmount", "data": [{"key": "*", "value": 4237913000}] }
 ```
 
-Invalid/unsupported `groupBy` or `metric` values, or malformed dates, return `400` with `{"error": "..."}`.
+Invalid/unsupported `groupBy` or `metric` values, malformed dates, or a malformed `ficoBand` return `400` with `{"error": "..."}`.
 
 ## Setup
 - Download [data](https://drive.google.com/file/d/1RdRVZdy_UYknm0Qr9clXAlQIi0Pts9VI/view?usp=share_link)
@@ -73,11 +73,11 @@ sbt test
   or building an index by each possible bucket, e.g. grouping loan records by state.
 - Data is loaded once, at startup (see the `sbt run` note above for the dev-mode caveat), and remains static 
   for the lifetime of the application. A real application would likely need to load data dynamically.
-- A real application would need a readiness check to wait for the initial data load.
+- A real application would need a readiness check to wait for the initial data load before taking traffic,
+  unless a database was used instead.
 - Only supports grouping by a single field.
-- Should dates use the same format as the CSV file?
-- Support fico low OR high in band?
-- I added unit tests, but not integration tests
+- FICO filtering based on whether low OR high in band?
+- I added unit tests, but not full end-to-end smoke tests.
 
 ## Development Notes
-- Testing was a bit rushed for the last few features, and more would be required before deployment. 
+- Testing was a bit rushed for the last few features, and more would be required before deployment.
