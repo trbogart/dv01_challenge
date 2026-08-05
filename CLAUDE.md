@@ -23,6 +23,7 @@ Build a backend API in Scala that parses and aggregates loan data from a Lending
 - CSV loading (`dv01api.parser.LoanRecordParser`, `dv01api.service.LoanDataLoader`): the data file path comes from the `data_file` key in `conf/application.conf` (plain HOCON, not YAML — Play's config system already handles this natively, so introducing a YAML library wasn't worth it). `LoanDataLoader` is bound as an eager Guice singleton in `dv01api.Module` (registered via `play.modules.enabled` in `application.conf`) so the CSV is parsed once at startup, not lazily on first request. The parser uses `commons-csv` and must tolerate the real file's shape: a banner line before the header, and blank lines plus a "Total amount funded..." summary footer at EOF — both are skipped rather than parsed, by discarding the banner explicitly and treating any row that fails field conversion (via `Try`) as skippable, logged at `warn`.
 - Request/performance logging (`dv01api.filters.LoggingFilter`): a `play.api.mvc.Filter` that logs method, path, response status, and elapsed millis (at `info`) for every request. Registered via `dv01api.filters.Filters` (a `DefaultHttpFilters`), wired in via `play.http.filters` in `application.conf`. Uses `org.apache.pekko.stream.Materializer` (not Akka) for the implicit `Filter.mat` — Play 3.0's `org.playframework` line replaced Akka with Apache Pekko.
 - Logging config lives in `conf/logback.xml`, not `application.conf` — Play's `logger.<name> = <level>` HOCON keys are deprecated in this Play version and silently have no effect (learned the hard way: root is `WARN` by default, and the `dv01api` logger is explicitly bumped to `INFO` there so both `LoanDataLoader`'s and `LoggingFilter`'s `info` logs are visible).
+- API docs (`GET /docs`, `GET /openapi.yaml`): a hand-written OpenAPI 3.0 spec at `public/openapi.yaml` plus a Swagger UI page at `public/docs.html` (loads `swagger-ui-dist` from a CDN, no new dependency), both served as static files via Play's built-in `controllers.Assets.at(path="/public", file=...)` — no DI wiring needed, `Assets` is provided by Play's default bindings. Chose this over an sbt-swagger-play-style plugin (which does exist for this Play 3.0/Scala 3 combo, e.g. `com.github.dwickern:sbt-swagger-play`) to avoid another dependency/version-compat risk on top of the ones already hit in this project; the spec is accurate as of when it was written but isn't auto-generated, so it needs manual updates if the endpoint changes. Gotcha: Play's default `play.http.fileMimeTypes` is a newline-separated `ext=type` **string**, not a HOCON object — extending it for `.yaml` (`application.conf`) required `${play.http.fileMimeTypes} """...."""` string concatenation; the natural-looking `${play.http.fileMimeTypes} { yaml = "..." }` object-merge syntax throws `Cannot concatenate object or list with a non-object-or-list` at startup.
 
 ## Build system
 
@@ -40,7 +41,7 @@ Common commands:
 sbt compile                # compile main sources
 sbt test                   # run all tests
 sbt "testOnly *SomeSpec"   # run a single MUnit test suite
-sbt run                    # run the Play app (conf/routes is currently empty — everything 404s until routes/controllers are added)
+sbt run                    # run the Play app; GET /api/loans/aggregate, /docs, /openapi.yaml
 ```
 
 ## Git

@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: dv01 Loan Data API
+  description: >
+    Parses and aggregates LendingClub-format loan data (LoanStats_securev1_2017Q4.csv).
+  version: "1.0"
+servers:
+  - url: /
+paths:
+  /api/loans/aggregate:
+    get:
+      summary: Aggregate loan records
+      description: >
+        Filters loan records, groups them, and computes a metric per group.
+        Grouping and filters are all optional except `metric`; omitting `groupBy`
+        (or passing `groupBy=*`) skips grouping and aggregates everything into a
+        single `"*"` bucket.
+      parameters:
+        - name: groupBy
+          in: query
+          required: false
+          description: >
+            Field to group by. Omitted or `*` means no grouping — all matching
+            records are aggregated into a single `"*"` bucket.
+          schema:
+            type: string
+            enum: [state, grade, yearMonth, "*"]
+            default: "*"
+          examples:
+            byState:
+              value: state
+            noGrouping:
+              value: "*"
+        - name: metric
+          in: query
+          required: true
+          description: Metric computed per group. Average metrics are rounded to 2 decimal places.
+          schema:
+            type: string
+            enum: [totalLoanAmount, count, averageLoanAmount, averageInterestRate]
+        - name: grade
+          in: query
+          required: false
+          description: Comma-separated list of loan grades to include, e.g. `A,B`. Unfiltered if omitted.
+          schema:
+            type: string
+          example: "A,B"
+        - name: dateFrom
+          in: query
+          required: false
+          description: Inclusive lower bound on `issue_d`, format `yyyy-MM`.
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+          example: "2017-11"
+        - name: dateTo
+          in: query
+          required: false
+          description: Inclusive upper bound on `issue_d`, format `yyyy-MM`.
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+          example: "2017-12"
+        - name: ficoBand
+          in: query
+          required: false
+          description: >
+            Inclusive FICO range `low-high`, matched against a record's
+            `fico_range_low` only (not `fico_range_high`).
+          schema:
+            type: string
+            pattern: '^\d+-\d+$'
+          example: "670-739"
+      responses:
+        "200":
+          description: Aggregation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregateResponse"
+              examples:
+                byState:
+                  summary: groupBy=state&metric=totalLoanAmount
+                  value:
+                    groupBy: state
+                    metric: totalLoanAmount
+                    data:
+                      - key: CA
+                        value: 48213000
+                      - key: NY
+                        value: 31200000
+                noGrouping:
+                  summary: metric=totalLoanAmount (no groupBy)
+                  value:
+                    groupBy: "*"
+                    metric: totalLoanAmount
+                    data:
+                      - key: "*"
+                        value: 4237913000
+        "400":
+          description: >
+            Unsupported `groupBy`/`metric`, or a malformed `dateFrom`/`dateTo`/`ficoBand`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Unsupported groupBy 'bogus'. Supported: state, grade, yearMonth, *"
+components:
+  schemas:
+    AggregateBucket:
+      type: object
+      properties:
+        key:
+          type: string
+          description: The group's value, e.g. a state code, grade, "yyyy-MM", or "*" for no grouping.
+        value:
+          type: number
+          description: The computed metric for this group.
+      required: [key, value]
+    AggregateResponse:
+      type: object
+      properties:
+        groupBy:
+          type: string
+          enum: [state, grade, yearMonth, "*"]
+        metric:
+          type: string
+          enum: [totalLoanAmount, count, averageLoanAmount, averageInterestRate]
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AggregateBucket"
+      required: [groupBy, metric, data]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]

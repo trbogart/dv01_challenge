@@ -2,3 +2,7 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 
 GET     /api/loans/aggregate       dv01api.controllers.LoansController.aggregate(groupBy: Option[String], metric: String, grade: Option[String], dateFrom: Option[String], dateTo: Option[String], ficoBand: Option[String])
+
+# API documentation: /docs is a Swagger UI page (CDN-loaded, no new dependency) reading the hand-written spec at /openapi.yaml
+GET     /openapi.yaml              controllers.Assets.at(path="/public", file="openapi.yaml")
+GET     /docs                      controllers.Assets.at(path="/public", file="docs.html")

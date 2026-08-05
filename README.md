@@ -39,6 +39,12 @@ GET /api/loans/aggregate?metric=totalLoanAmount
 
 Invalid/unsupported `groupBy` or `metric` values, malformed dates, or a malformed `ficoBand` return `400` with `{"error": "..."}`.
 
+### API Documentation
+
+Interactive docs (Swagger UI): `GET /docs`, once the server is running.
+Raw OpenAPI 3.0 spec: `GET /openapi.yaml` (hand-written, at `public/openapi.yaml`; not auto-generated from code, so
+keep it in sync manually if the endpoint changes).
+
 ## Setup
 - Download [data](https://drive.google.com/file/d/1RdRVZdy_UYknm0Qr9clXAlQIi0Pts9VI/view?usp=share_link)
 - Expand zip file (~118k lines) to `data/LoanStats_securev1_2017Q4.csv`
@@ -64,6 +70,8 @@ sbt test
 - HTTP layer and routing use Play's built-in `Action`/`conf/routes`, with `play-json` for serialization
 - Aggregate data in code (see below for scalability)
 - MUnit tests
+- API docs are a static OpenAPI spec + Swagger UI (CDN-loaded), served as static files via Play's built-in
+  `controllers.Assets` — no new sbt dependency
 
 ## Known Limitations / Questions
 - Aggregation is currently done per request, which is O(n) by record count.
