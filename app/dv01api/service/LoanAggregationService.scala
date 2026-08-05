@@ -19,6 +19,7 @@ object LoanAggregationService:
     (query.grades.isEmpty || query.grades.contains(record.grade))
       && query.dateFrom.forall(from => !record.issueDate.isBefore(from))
       && query.dateTo.forall(to => !record.issueDate.isAfter(to))
+      && query.ficoBand.forall(band => record.ficoLow >= band.low && record.ficoLow <= band.high)
 
   private def groupKey(record: LoanRecord, groupBy: GroupBy): String = groupBy match
     case GroupBy.State => record.state

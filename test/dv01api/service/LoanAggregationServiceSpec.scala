@@ -1,6 +1,6 @@
 package dv01api.service
 
-import dv01api.model.{AggregateBucket, AggregateQuery, GroupBy, LoanRecord, Metric}
+import dv01api.model.{AggregateBucket, AggregateQuery, FicoBand, GroupBy, LoanRecord, Metric}
 
 import java.time.YearMonth
 
@@ -11,24 +11,25 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
     grade: String,
     issueDate: YearMonth,
     loanAmount: BigDecimal,
-    intRate: BigDecimal = BigDecimal("10.00")
+    intRate: BigDecimal = BigDecimal("10.00"),
+    ficoLow: Int = 700
   ): LoanRecord =
     LoanRecord(
       issueDate = issueDate,
       state = state,
       grade = grade,
       subGrade = grade + "1",
-      ficoLow = 700,
-      ficoHigh = 704,
+      ficoLow = ficoLow,
+      ficoHigh = ficoLow + 4,
       loanAmount = loanAmount,
       intRate = intRate
     )
 
   private val records = List(
-    loan("CA", "A", YearMonth.of(2018, 1), BigDecimal(10000), BigDecimal("8.00")),
-    loan("CA", "B", YearMonth.of(2018, 6), BigDecimal(5000), BigDecimal("9.50")),
-    loan("NY", "A", YearMonth.of(2018, 3), BigDecimal(7000), BigDecimal("12.00")),
-    loan("NY", "C", YearMonth.of(2017, 12), BigDecimal(3000), BigDecimal("15.25"))
+    loan("CA", "A", YearMonth.of(2018, 1), BigDecimal(10000), BigDecimal("8.00"), ficoLow = 700),
+    loan("CA", "B", YearMonth.of(2018, 6), BigDecimal(5000), BigDecimal("9.50"), ficoLow = 675),
+    loan("NY", "A", YearMonth.of(2018, 3), BigDecimal(7000), BigDecimal("12.00"), ficoLow = 720),
+    loan("NY", "C", YearMonth.of(2017, 12), BigDecimal(3000), BigDecimal("15.25"), ficoLow = 660)
   )
 
   private def query(
@@ -36,9 +37,10 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
     dateFrom: Option[YearMonth] = None,
     dateTo: Option[YearMonth] = None,
     metric: Metric = Metric.TotalLoanAmount,
-    groupBy: GroupBy = GroupBy.State
+    groupBy: GroupBy = GroupBy.State,
+    ficoBand: Option[FicoBand] = None
   ): AggregateQuery =
-    AggregateQuery(groupBy, metric, grades, dateFrom, dateTo)
+    AggregateQuery(groupBy, metric, grades, dateFrom, dateTo, ficoBand)
 
   test("groups by state and sums loan amount, with no filters") {
     val result = LoanAggregationService.aggregate(records, query())
@@ -149,4 +151,21 @@ class LoanAggregationServiceSpec extends munit.FunSuite:
         AggregateBucket("2018-06", BigDecimal(5000))
       )
     )
+  }
+
+  test("filters by ficoBand, matched against ficoLow, inclusive on both ends") {
+    // ficoLow values: 700, 675, 720, 660 — only 660 falls outside 670-739
+    val result = LoanAggregationService.aggregate(
+      records,
+      query(groupBy = GroupBy.All, ficoBand = Some(FicoBand(670, 739)))
+    )
+    assertEquals(result, List(AggregateBucket("*", BigDecimal(22000))))
+  }
+
+  test("ficoBand boundaries are inclusive") {
+    val result = LoanAggregationService.aggregate(
+      records,
+      query(groupBy = GroupBy.All, ficoBand = Some(FicoBand(660, 660)))
+    )
+    assertEquals(result, List(AggregateBucket("*", BigDecimal(3000))))
   }

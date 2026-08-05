@@ -11,15 +11,16 @@ import javax.inject.{Inject, Singleton}
 class LoansController @Inject() (loanDataLoader: LoanDataLoader, cc: ControllerComponents)
     extends AbstractController(cc):
 
-  /** GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2018-01&dateTo=2018-12 */
+  /** GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2018-01&dateTo=2018-12&ficoBand=670-739 */
   def aggregate(
     groupBy: Option[String],
     metric: String,
     grade: Option[String],
     dateFrom: Option[String],
-    dateTo: Option[String]
+    dateTo: Option[String],
+    ficoBand: Option[String]
   ): Action[AnyContent] = Action {
-    AggregateQuery.fromParams(groupBy, metric, grade, dateFrom, dateTo) match
+    AggregateQuery.fromParams(groupBy, metric, grade, dateFrom, dateTo, ficoBand) match
       case Left(error) => BadRequest(Json.obj("error" -> error))
       case Right(query) =>
         val data = LoanAggregationService.aggregate(loanDataLoader.records, query)

@@ -19,6 +19,7 @@ Query parameters:
 - `grade` (optional) — comma-separated list, e.g. `A,B`; unfiltered if omitted
 - `dateFrom`, `dateTo` (optional) — `yyyy-MM`, inclusive on both ends; filters on `issue_d`
    (but note the format difference, e.g. `2017-12` instead of `Dec-2017`)
+- `ficoBand` (optional) — `low-high`, e.g. `670-739`, inclusive on both ends; matched against a record's `fico_range_low`, not `fico_range_high`
 
 Example:
 ```
@@ -64,7 +65,7 @@ sbt test
 - Aggregate data in code (see below for scalability)
 - MUnit tests
 
-## Known Limitations
+## Known Limitations / Questions
 - Aggregation is currently done per request, which is O(n) by record count.
   - This is likely acceptable for a low-volume API at this dataset size (~118k rows),
   resulting in latency of 50 ms or less on development computer. 
@@ -75,4 +76,5 @@ sbt test
   for the lifetime of the application. A real application would likely need to load data dynamically.
 - A real application would need a readiness check to wait for the initial data load.
 - Only supports grouping by a single field.
-- Should dates use same format as CSV file?
+- Should dates use the same format as the CSV file?
+- Support fico low OR high in band?

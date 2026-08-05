@@ -23,6 +23,9 @@ enum Metric(val paramName: String):
 object Metric:
   def parse(value: String): Option[Metric] = values.find(_.paramName == value)
 
+/** An inclusive FICO score range, e.g. `670-739`. Matched against a record's `ficoLow`. */
+case class FicoBand(low: Int, high: Int)
+
 /**
  * A validated representation of the `/api/loans/aggregate` query string.
  */
@@ -31,7 +34,8 @@ case class AggregateQuery(
   metric: Metric,
   grades: Set[String],
   dateFrom: Option[YearMonth],
-  dateTo: Option[YearMonth]
+  dateTo: Option[YearMonth],
+  ficoBand: Option[FicoBand]
 )
 
 object AggregateQuery:
@@ -41,7 +45,8 @@ object AggregateQuery:
     metric: String,
     grade: Option[String],
     dateFrom: Option[String],
-    dateTo: Option[String]
+    dateTo: Option[String],
+    ficoBand: Option[String]
   ): Either[String, AggregateQuery] =
     for
       gb <- parseGroupBy(groupBy)
@@ -50,12 +55,14 @@ object AggregateQuery:
       )
       from <- parseYearMonth(dateFrom, "dateFrom")
       to <- parseYearMonth(dateTo, "dateTo")
+      fico <- parseFicoBand(ficoBand)
     yield AggregateQuery(
       groupBy = gb,
       metric = m,
       grades = parseGrades(grade),
       dateFrom = from,
-      dateTo = to
+      dateTo = to,
+      ficoBand = fico
     )
 
   /** Omitted `groupBy` is equivalent to the explicit `groupBy=*` (no grouping). */
@@ -66,6 +73,20 @@ object AggregateQuery:
         GroupBy.parse(value).toRight(
           s"Unsupported groupBy '$value'. Supported: ${GroupBy.values.map(_.paramName).mkString(", ")}"
         )
+
+  private def parseFicoBand(value: Option[String]): Either[String, Option[FicoBand]] =
+    value match
+      case None => Right(None)
+      case Some(s) =>
+        s.split("-", 2) match
+          case Array(lowStr, highStr) =>
+            (Try(lowStr.trim.toInt).toOption, Try(highStr.trim.toInt).toOption) match
+              case (Some(low), Some(high)) if low <= high => Right(Some(FicoBand(low, high)))
+              case _ => Left(invalidFicoBandMessage(s))
+          case _ => Left(invalidFicoBandMessage(s))
+
+  private def invalidFicoBandMessage(value: String): String =
+    s"Invalid ficoBand '$value', expected format low-high with low <= high, e.g. 670-739"
 
   private def parseGrades(grade: Option[String]): Set[String] =
     grade.toSet.flatMap(_.split(",")).map(_.trim).filter(_.nonEmpty)
