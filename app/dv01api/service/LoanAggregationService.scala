@@ -7,6 +7,13 @@ import dv01api.model.{AggregateBucket, AggregateQuery, GroupBy, LoanRecord, Metr
  */
 object LoanAggregationService:
 
+  /**
+   * Aggregates all records based on query. O(n) on total number of records.
+   *
+   * @param records list of all records
+   * @param query   query object based
+   * @return aggregation results
+   */
   def aggregate(records: List[LoanRecord], query: AggregateQuery): List[AggregateBucket] =
     records
       .filter(matchesFilters(_, query))

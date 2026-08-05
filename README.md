@@ -69,12 +69,15 @@ sbt test
 - Aggregation is currently done per request, which is O(n) by record count.
   - This is likely acceptable for a low-volume API at this dataset size (~118k rows),
   resulting in latency of 50 ms or less on development computer. 
-  - More scalable solutions appropriate for higher call volume or dataset size include
-  using a database (e.g. sqlite) or building an index by each possible bucket,
-  e.g. grouping loan records by state.
+  - More scalable solutions appropriate for higher call volume or dataset size include using a database (e.g. sqlite) 
+  or building an index by each possible bucket, e.g. grouping loan records by state.
 - Data is loaded once, at startup (see the `sbt run` note above for the dev-mode caveat), and remains static 
   for the lifetime of the application. A real application would likely need to load data dynamically.
 - A real application would need a readiness check to wait for the initial data load.
 - Only supports grouping by a single field.
 - Should dates use the same format as the CSV file?
 - Support fico low OR high in band?
+- I added unit tests, but not integration tests
+
+## Development Notes
+- Testing was a bit rushed for the last few features, and more would be required before deployment. 

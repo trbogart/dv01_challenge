@@ -5,8 +5,8 @@ import java.time.YearMonth
 /**
  * Represents a single loan record loaded from the data file.
  *
- * @param issueDate  issue date (issue_d field, converted from MMM-yyyy format with English locale)
- * @param state      US state as unvalidated string, e.g. "CA" (addr_state field) TODO validate?
+ * @param issueDate  issue date (issue_d field, converted from MMM-yyyy format with English locale, e.g. Dec-2017)
+ * @param state      US state as unvalidated string, e.g. "CA" (addr_state field)
  * @param grade      grade from A-G (grade field)
  * @param subGrade   sub-grade, e.g. "B5" (sub_grade field)
  * @param ficoLow    low FICO score (fico_range_low field)
@@ -24,6 +24,4 @@ case class LoanRecord(
                        ficoHigh: Int, // fico_range_high
                        loanAmount: BigDecimal, // loan_amnt
                        intRate: BigDecimal, // int_rate
-
-                       // TODO may add other fields, e.g. status
                      )
