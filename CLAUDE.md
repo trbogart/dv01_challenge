@@ -4,17 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Remaining tasks:
-- Implement API MVP
-  - GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2018-01&dateTo=2018-12
-  - For MVP, support groupBy=state and metric=totalLoanAmount, along with filtering by grade(s), dateFrom, and dateTo (inclusive)
-  - Example response:
-    - `{ "groupBy": "state", "metric": "totalLoanAmount", "data": [{"key": "CA", "value": 48213000}, {"key": "NY", "value": 31200000}] }`
-- Additional features, time permitting:
-  - Add support for metric=count, averageLoanAmount, or averageInterestRate
-  - Add support for filtering by ficoBand=670-739&
-  - Add support for groupBy=grade
-  - Add support for groupBy=ficoBand
+API MVP is implemented: `GET /api/loans/aggregate` (`dv01api.controllers.LoansController`, routed in `conf/routes`) supports `groupBy=state` and `metric=totalLoanAmount`, with filtering by `grade` (comma-separated), and `dateFrom`/`dateTo` (`yyyy-MM`, inclusive). Query parsing/validation lives in `dv01api.model.AggregateQuery.fromParams` (returns `Either[String, AggregateQuery]`, surfaced as `400` with `{"error": "..."}` on failure); filtering/grouping/metric computation lives in `dv01api.service.LoanAggregationService`. `GroupBy` and `Metric` are Scala 3 enums with a `paramName` field so parsing and response serialization stay in sync. Covered by `test/dv01api/model/AggregateQuerySpec.scala` and `test/dv01api/service/LoanAggregationServiceSpec.scala` (not yet run against `sbt test` in this environment — sbt isn't on PATH here — should be verified before relying on it).
+
+Remaining tasks, time permitting:
+- Make groupBy optional
+- Add support for metric=count, averageLoanAmount, or averageInterestRate
+- Add support for filtering by ficoBand=670-739&
+- Add support for groupBy=grade
+- Add support for groupBy=yearMonth
+- Add support for groupBy=ficoBand
 - Finish documentation and remove TODOs before submitting
 
 ## Goal (from README.md)

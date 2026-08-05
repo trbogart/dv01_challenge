@@ -7,12 +7,28 @@ Backend API to parses and aggregates loan data.
 ### Goal
 
 The goal of the challenge is to create a backend that parses and aggregates the data provided above dynamically 
-via an API endpoint for visualizing this data. A good starting point for parameters to the API is date, state, 
-grade or borrow FICO bands.
+via an API endpoint for visualizing this data.
 
 ## API Endpoint
 
-TODO
+`GET /api/loans/aggregate`
+
+Query parameters:
+- `groupBy` (required) — currently only `state`
+- `metric` (required) — currently only `totalLoanAmount`
+- `grade` (optional) — comma-separated list, e.g. `A,B`; unfiltered if omitted
+- `dateFrom`, `dateTo` (optional) — `yyyy-MM`, inclusive on both ends; filters on `issue_d`
+   (but not the format difference, e.g. `2017-12` instead of `Dec-2017`)
+
+Example:
+```
+GET /api/loans/aggregate?groupBy=state&metric=totalLoanAmount&grade=A,B&dateFrom=2017-01&dateTo=2017-12
+```
+```json
+{ "groupBy": "state", "metric": "totalLoanAmount", "data": [{"key": "CA", "value": 48213000}, {"key": "NY", "value": 31200000}] }
+```
+
+Invalid/unsupported `groupBy` or `metric` values, or malformed dates, return `400` with `{"error": "..."}`.
 
 ## Setup
 - Download [data](https://drive.google.com/file/d/1RdRVZdy_UYknm0Qr9clXAlQIi0Pts9VI/view?usp=share_link)
@@ -29,7 +45,9 @@ hit the already-loaded in-memory data. This is a dev-mode-only quirk (see `sbt-p
 behavior); a staged/production run (`sbt stage`) loads the data at process startup instead.
 
 ## Tests
-TODO
+```
+sbt test
+```
 
 ## Architecture
 
@@ -48,5 +66,6 @@ e.g. grouping loan records by state.
 TODO - verify performance
 
 ## Other Limitations
-- Data is loaded once, at application startup (see the `sbt run` note above for the dev-mode caveat), and remains static
-- A real application would need a readiness check to wait for data load finish
+- Data is loaded once, at startup (see the `sbt run` note above for the dev-mode caveat), and remains static 
+  for the lifetime of the application.
+- A real application would need a readiness check to wait for data load finish.
