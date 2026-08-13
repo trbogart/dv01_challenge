@@ -81,3 +81,29 @@ sbt test
 
 ## Development Notes
 - Testing was a bit rushed for the last few features, and more would be required before deployment.
+
+### Additional notes added before review (for discussion, not fully fleshed out)
+- Additional features:
+  - Return can also return the total count (* group). The client can figure that out, but it might be simpler for some use cases.
+  - Filter by state(s) as comma-separated list, similar to grade.
+- More thoughts on testing:
+  - The Claude test cases actually seemed pretty good, but I would definitely want to review that more thoroughly.
+  - I also didn't thoroughly test the actual numbers returned beyond a quick sanity check.
+    - One option would be to compare different queries against results calculated in a spreadsheet.
+- I mentioned the possibility of an in-memory index:
+  - That is possible, and can be very fast if it all fits in memory.
+    - Can take intersection of multiple indexes pointing to sets of ids
+    - `SortedMap` for ranges or `Map` for discrete buckets 
+  - However, the test data is only for a few months, so real data will be much larger.
+  - Could also pre-aggregate the data into buckets.
+    - Store count and total for each metric with key at most granular level (e.g. month, FICO band, state, grade)
+    - Aggregation still needs to group by and sum, but over a smaller number of rows, saving memory and improving performance.
+    - Would need some domain knowledge, e.g. how FICO bands actually work.
+- An datastore is probably the better option in practice, though.
+  - This is a read-heavy, analysis-focused use case (OLAP).
+  - Could still partially aggregate data (see previous section).
+- One minor thing I noticed with Claude's generated code is that it used `toList.map` instead of `map.toList` in 
+ `LoanAggregationService.aggregate`, adding a premature materialization.
+- Error is just a string, which should be more structured in a real app.
+- Some methods could be refactored to return a `Future`, e.g. `LoanAggregationService.aggregate`.
+  - This doesn't really matter with the current implementation, but would be more future-proof.
